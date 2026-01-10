@@ -23,21 +23,30 @@ class Littlewoods(BaseOptimizer):
         if len(book.fares) < 2:
             raise ValueError("Littlewood's Rule Needs 2 fares")
 
-        ph = book.fares[0]
-        pl = book.fares[1]
+        fare_1 = book.fares[0]
+        fare_2 = book.fares[1]
+        print(fare_1)
+
+        ph = fare_1.price
+        pl = fare_2.price
+        print(ph)
 
         capacity = book.capacity #the inventory per day
 
         critical_ratio = pl / ph
 
         protection_level = norm.ppf(1 - critical_ratio,
-                                    loc = ph.mean,
-                                    scale = ph.standard_deviation)
-        result = f"The optimal protection value for {ph.name} is {protection_level}"
+                                    loc = fare_1.mean,
+                                    scale = fare_1.standard_devation)
 
-        return result
+        if show_inventory == True:
+            self._show_inventory(capacity, protection_level)
+        if show_statistics == True:
+            self._show_statistics(protection_level, fare_1.mean, fare_1.standard_devation)
+
+        return print(f"The optimal protection value for {fare_1.name} is {protection_level}")
     
-    def _show_invetory(self, capacity, protection_level):
+    def _show_inventory(self, capacity, protection_level):
         """
         Docstring for _show_invetory
         plots a nested inventory for a lower and higher fare
@@ -48,7 +57,7 @@ class Littlewoods(BaseOptimizer):
 
         available = capacity - protection_level
 
-        fig, ax = plt.subplot(figsize = (10, 2))
+        fig, ax = plt.subplots(figsize = (10, 2))
         #bars
         ax.barh(0, protection_level, color = "#008020", label = "Protected for Ph") #I like this green :)
         ax.barh(0, available, color = "#0A7FC7", label = "Available for both Ph and Pl") #check how to change the names
@@ -89,8 +98,9 @@ class Littlewoods(BaseOptimizer):
         axs[0].plot(x, y_pdf)
         axs[0].set_title("Density function of demnand")
 
-        axs[1] = plt.plot(x, y_cdf)
-        axs[1] = plt.set_title("Cummulative Density Function")
+        axs[1].plot(x, y_cdf)
+        axs[1].set_title("Cummulative Density Function")
+        plt.show()
         
         
 
