@@ -1,12 +1,11 @@
 [build-system]
-requires = ["setuptools >= 61.0]
+requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "revpy"
-version = "0.1.0"
-description = "Revenue Management Library"
-
+name = "rmpy"
+version = "0.0.1"
+description = "Revenue Management logic"
 dependencies = [
     "numpy",
     "scipy",

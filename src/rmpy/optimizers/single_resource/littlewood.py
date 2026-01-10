@@ -29,7 +29,7 @@ class Littlewoods(BaseOptimizer):
 
         ph = fare_1.price
         pl = fare_2.price
-        print(ph)
+        
 
         capacity = book.capacity #the inventory per day
 
@@ -38,15 +38,17 @@ class Littlewoods(BaseOptimizer):
         protection_level = norm.ppf(1 - critical_ratio,
                                     loc = fare_1.mean,
                                     scale = fare_1.standard_devation)
+        
+        protection_level = round(protection_level)
 
         if show_inventory == True:
-            self._show_inventory(capacity, protection_level)
+            self._show_inventory(capacity, protection_level, fare_1.name, fare_2.name)
         if show_statistics == True:
-            self._show_statistics(protection_level, fare_1.mean, fare_1.standard_devation)
+            self._show_statistics(protection_level, fare_1.mean, fare_1.standard_devation, critical_ratio)
 
         return print(f"The optimal protection value for {fare_1.name} is {protection_level}")
     
-    def _show_inventory(self, capacity, protection_level):
+    def _show_inventory(self, capacity, protection_level, high_name, low_name):
         """
         Docstring for _show_invetory
         plots a nested inventory for a lower and higher fare
@@ -57,14 +59,15 @@ class Littlewoods(BaseOptimizer):
 
         available = capacity - protection_level
 
-        fig, ax = plt.subplots(figsize = (10, 2))
+        fig, ax = plt.subplots(figsize = (10, 4))
         #bars
-        ax.barh(0, protection_level, color = "#008020", label = "Protected for Ph") #I like this green :)
-        ax.barh(0, available, color = "#0A7FC7", label = "Available for both Ph and Pl") #check how to change the names
+        ax.barh(0, protection_level, color = "#008020", label = f"Protected for {high_name}", edgecolor = "white") #I like this green :)
+        ax.barh(0, available,left=protection_level, color = "#0A7FC7", label = f"Available for both {high_name} and {low_name}",
+                edgecolor = "white") #check how to change the names
         #texts
         ax.text(protection_level / 2, 0, f'Protected: {protection_level}',
                 va = 'center', ha = 'center', color = 'white', fontweight = 'bold')
-        ax.text(protection_level + (available / 2), 0, f'Available for Pl {available}',
+        ax.text(protection_level + (available / 2), 0, f'Available for {low_name} {available}',
                 va = 'center', ha = 'center', color = 'white', fontweight = 'bold')
         # Do some styling
         ax.set_yticks([]) # no y axis
@@ -77,7 +80,7 @@ class Littlewoods(BaseOptimizer):
         plt.show()
 
     
-    def _show_statistics(self, protection_level, mean, standard_deviation):
+    def _show_statistics(self, protection_value, mean, standard_deviation, critical_ratio):
         """
         Docstring for _show_statistics
         
@@ -87,7 +90,7 @@ class Littlewoods(BaseOptimizer):
 
         returns cdf and pdf with critical ration painted
         """
-        fig, axs = plt.subplots(ncols= 2, figsize = (7, 7), layout = 'constrained')
+        fig, axs = plt.subplots(ncols= 2, figsize = (8, 8), layout = 'constrained')
 
         #get the x-axis
         x = np.linspace(mean - (3 * standard_deviation), mean + (3 * standard_deviation), mean)
@@ -97,11 +100,17 @@ class Littlewoods(BaseOptimizer):
 
         axs[0].plot(x, y_pdf)
         axs[0].set_title("Density function of demnand")
+        axs[0].fill_between(x, y_pdf,
+                            where = (x >= protection_value),
+                            color = "red",#change the colors later
+                            alpha = 0.3,
+                            label = f'Critical Ratio {critical_ratio:.2f}')
 
         axs[1].plot(x, y_cdf)
         axs[1].set_title("Cummulative Density Function")
+        axs[1].axhline(y = critical_ratio, color = 'red', linestyle = "--", label = "Critical Ratio")# add more legens and context
         plt.show()
         
-        
+        #### add text to the shading and to the lines, also refine the demand and intuiton
 
         
