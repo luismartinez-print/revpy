@@ -1,8 +1,3 @@
-import sys
-import os
-sys.path.append(os.path.join(os.getcwd(), "src"))
-
-
 from rmpy.models import Book, FareClass
 from rmpy.optimizers.single_resource.littlewood import Littlewoods
 
