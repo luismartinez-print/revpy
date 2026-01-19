@@ -40,13 +40,16 @@ class Littlewoods(BaseOptimizer):
                                     scale = fare_1.standard_devation)
         
         protection_level = round(protection_level)
+        booking_limit = capacity - protection_level
 
         if show_inventory == True:
             self._show_inventory(capacity, protection_level, fare_1.name, fare_2.name)
         if show_statistics == True:
             self._show_statistics(protection_level, fare_1.mean, fare_1.standard_devation, critical_ratio)
 
-        return print(f"The optimal protection value for {fare_1.name} is {protection_level}")
+        print(f"The optimal protection value for {fare_1.name} is {protection_level}",
+                     f"The booking limit for {fare_2.name} is {booking_limit}", sep='\n')
+        return protection_level
     
     def _show_inventory(self, capacity, protection_level, high_name, low_name):
         """
