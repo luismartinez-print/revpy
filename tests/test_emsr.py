@@ -16,6 +16,6 @@ for fare in fares:
 
 opt = Emsr()
 
-result = opt.optimize(book, emsr_type= 'a')
+result = opt.optimize(book, emsr_type= 'a', show_inventory= True)
 
 print(result)

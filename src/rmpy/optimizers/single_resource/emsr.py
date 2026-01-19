@@ -22,21 +22,19 @@ class Emsr(BaseOptimizer):
         :param show_inventory: Default false. Shows the inventory breakdown.
         :show_statistics: Default fase. Shows the statistics and probability breakdown
 
-        :returns two dictionarie sone with the protection values and the other with booking limits
+        :returns a dictionary with protection values and booking limits for each fare
         """
-        protection_levels = {} #here we will store the protection values
-        booking_limits = {} #here the booking limits
+        result_dict = {}
+        capacity = book.capacity
+
         if emsr_type == 'a':
             fares = sorted(book.fares, key = attrgetter("price"), reverse = False)
             
 
             for i in range(len(fares)):
                 low_fare = fares[i]
-
                 protection_agg = 0
-
-                protection_levels[f'Protection for > {low_fare.name}'] = protection_agg
-                booking_limits[low_fare.name] = book.capacity - protection_agg
+                protection_booking = []
 
                 for j in range(i + 1, len(fares)):
                     
@@ -48,38 +46,98 @@ class Emsr(BaseOptimizer):
                     protection_level = round(protection_level)
                     
                     protection_agg += protection_level
-
-        fares = book.fares
-        sum_mean = fares[0].mean
-        sum_variance = fares[0].standard_devation ** 2
-
-        # weighted price of higher priced products
-        weighted_revenue = fares[0].price * fares[0].mean
-
-        for i in range(1, len(fares)):
-            current_fare = fares[i]
-            avg_price = weighted_revenue / sum_mean
-
-            sum_std = np.sqrt(sum_variance)
-
-            protection_level = norm.ppf( 1 - (current_fare.price / avg_price), loc = sum_mean, scale = sum_std) # joined for simplicity
-            protection_level = round(protection_level)
-
-            protection_levels[f'Protection againts > {current_fare.name}'] = protection_level
-            booking_limits[current_fare.name] = book.capacity - protection_level
-
-            sum_mean += current_fare.mean
-            sum_variance += current_fare.standard_devation ** 2
-            weighted_revenue += current_fare.price * current_fare.mean
+                
+                booking_limit = book.capacity - protection_agg
+                protection_booking.append(protection_agg)
+                protection_booking.append(booking_limit)
+                result_dict[low_fare.name] = protection_booking
 
 
-        return protection_levels, booking_limits
+        elif emsr_type == 'b':
+            fares = book.fares
+            result_dict[fares[0].name] = [0, capacity]
+            sum_mean = fares[0].mean
+            sum_variance = fares[0].standard_devation ** 2
+
+            # weighted price of higher priced products
+            weighted_revenue = fares[0].price * fares[0].mean
+
+            for i in range(1, len(fares)):
+                protection_booking = []
+                current_fare = fares[i]
+                avg_price = weighted_revenue / sum_mean
+
+                sum_std = np.sqrt(sum_variance)
+
+                protection_level = norm.ppf( 1 - (current_fare.price / avg_price), loc = sum_mean, scale = sum_std) # joined for simplicity
+                protection_level = round(protection_level)
+                booking_limit = book.capacity - protection_level
+
+                protection_booking.append(protection_level)
+                protection_booking.append(booking_limit)
+                result_dict[current_fare.name] = protection_booking
+
+
+                sum_mean += current_fare.mean
+                sum_variance += current_fare.standard_devation ** 2
+                weighted_revenue += current_fare.price * current_fare.mean
+
+        if show_inventory == True:
+            self._show_inventory(result_dict, capacity)
+        return result_dict
     
 
-    def _show_inventory(self):
+    def _show_inventory(self, booking_limits, capacity):
         """
         Docstring for _show_inventory
         Inside function to manage to show the inventory with booking limits and protection values
-        :param self: Description
+        :param self: OOP
         """
+        #create figure and axis
+        fig, ax = plt.subplots(figsize = (10, 5), layout = 'constrained')
 
+        names = list(booking_limits.keys())
+        position = range(len(names))
+
+        for i, (fare, values) in enumerate(booking_limits.items()):
+            protection = values[0]
+            bl = values[1]
+
+            ax.barh(
+                i,
+                bl,
+                color = '#008020',
+                alpha = 0.8,
+                height=0.6,
+                label = 'Available to sell' if i == 0 else ''
+            )
+            ax.barh(
+                i,
+                protection,
+                left = bl,
+                alpha = 0.4,
+                hatch = '///',
+                height= 0.6,
+                label = 'Protected for Higher Classes' if i == 0 else ''
+            )
+
+            if bl > 5:
+                ax.text(bl /2, i, f"{bl}",
+                        va = 'center', ha = 'center', color = 'white', fontweight = 'bold')
+            if protection > 5:
+                ax.text(bl + (protection /2), i, f"Protected: {protection}",
+                        va = 'center', ha = 'center', color = 'black', fontweight = 'bold')
+                
+
+        ax.set_yticks(position)
+        ax.set_yticklabels(names)
+        ax.set_xlabel("Seats")
+        ax.set_title(f"Inventory Controls (Total Capacity: {capacity})")
+        
+
+        ax.axvline(capacity, color="black", linestyle="--", linewidth=1, alpha=0.5)
+        ax.text(capacity, -0.5, "Capacity", ha="center", fontsize=8)
+
+        ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.15), ncol=2)
+        
+        plt.show()
