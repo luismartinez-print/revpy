@@ -1,10 +1,12 @@
-from rmpy.models import Book, FareClass
+from rmpy.models.airline import Leg, FareClass
 from rmpy.optimizers.single_resource.emsr import Emsr
 
 # Testing the classes
 
 #Some setup before
-book = Book(capacity=100)
+book = Leg(origin='New York', destination='Los Angeles', capacity= 100)
+
+
 fares = [
     FareClass("Basic",    price=100,  mean=60, standard_devation=15),  # Index 0
     FareClass("Standard", price=200,  mean=40, standard_devation=10),  # Index 1
