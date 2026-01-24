@@ -44,17 +44,45 @@ class Leg(Resource):
     
 
 ### Network Logic
-
-class HubNetwork:
+@dataclass
+class Itinerary:
     """
-    Class that creates a hub and spoke network to run optimizations
+    Docstring for Itinerary
+    Commercial object that the customer buys, for example the flight ticket
+    """
+    name: str
+    price: float
+    legs: List[Leg]
+    mean = float 
+    std: float 
+
+class AirlineNetwork:
+    """
+    Docstring for AirlineNetwork
+    Create itineraries into Virtual Fareclasses
+    """
+    def __init__(self, legs: List[Leg], itineraries: List[Itinerary]):
+        self.legs = legs
+        self.itineraries = itineraries
+    
+    def map_demand(self):
+        pass #here it will be the logic for Virtual Nesting
+
+
+
+
+class HubNetwork(AirlineNetwork):
+    """
+    Class that creates a hub and spoke networks
+    This makes the AirlineNetwork more easy to map that to go one by one
     """
 
     def __init__(self, hub_code: str):
         self.hub_code = hub_code
         self.spokes = []
-        self.legs = {}
-        self.itineraries = []
+        self._leg_map = {}
+        self._generated_itineraries = []
+        super().__init__(legs = [], itineraries=[])
 
     def add_spoke(self, city_code: str, capacity: int):
         """
@@ -66,12 +94,37 @@ class HubNetwork:
         
         """
         self.spokes.append(city_code)
+
         leg_in = Leg(origin = city_code, destination=self.hub_code, capacity=capacity)
-        self.legs[f"{city_code} - {self.hub_code}"] = leg_in
+        self._leg_map[f"{city_code} - {self.hub_code}"] = leg_in
+        self.legs.append(leg_in)
 
         leg_out = Leg(origin=self.hub_code, destination=city_code, capacity=capacity)
-        self.legs[f"{self.hub_code} - {city_code}"] = leg_out
+        self._leg_map[f"{self.hub_code} - {city_code}"] = leg_out
+        self.legs.append(leg_out)
 
-        def generate_fares(): 
-            pass #comeback to this one
+        def generate_fares(self, base_demand: float): #tie this to forecast
+            self.itineraries = []
+
+            for leg in self.legs:
+                itin = Itinerary(
+                    name = f'Local_{leg.name}',
+                    price = 100,
+                    mean = base_demand,
+                    std = base_demand * 0.2
+                )
+                self.itineraries.append(itin)
+
+            for origin, dest in permutations(self.spokes, 2):
+                leg_1 = self._leg_map[f"{origin} - {self.hub}"]
+                leg_2 = self._leg_map[f"{self.hub} - {dest}"]
+
+                #create a connecting itin
+                conn_itin = Itinerary(
+                    name=f"Conn_{origin}-{dest}",
+                    price = 250, #place holder
+                    legs = [leg_1, leg_2],
+                    mean = base_demand * 0.5, #place holder until I know what to do with it
+                    std = base_demand * 0.1
+                )
     
